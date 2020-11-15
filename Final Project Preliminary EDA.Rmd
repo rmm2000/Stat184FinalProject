@@ -5,17 +5,48 @@ date: 'November 15, 2020'
 output: html_notebook
 ---
 
-This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
 
-Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+###Guiding Question 
+What factor is the strongest predictor to determine the happiest country? 
+
+To attach my dataset, I converted my .csv file to a .txt file and uploaded it onto the Stat184FinalProject notebook. Then, I clicked on Import Dataset in Environment and renamed the dataset from "2015" to "WorldHappiness". To make sure that the dataset is uploaded and saved, I ran the code "View(WorldHappiness)" and I successfully was able to view the dataset table. 
+
+world happiness and see what countries are the happiest and what factors into them. 
+Make a clear statement of a single guiding/research question that will drive your analysis.  It should be phrased as a question that you will try to investigate (i.e., it should have a question mark) 
 
 ```{r}
-plot(cars)
+library(DataComputing)
+library(mosaic)
+library(readr)
 ```
 
-Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
 
-When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
 
-The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+```{r}
+WorldHappiness%>%
+  select(Country, Region, Happiness.Rank)
+```
+```{r}
+library(rvest)
+web_page <- "https://www.numbeo.com/crime/rankings_by_country.jsp?title=2015"
+SetOfTables <- web_page %>%
+  read_html() %>%
+  html_nodes(css = "table") %>%
+  html_table(fill = TRUE)
+length(SetOfTables)
+
+Table3 <- SetOfTables[[2]]
+View(Table3)
+```
+
+
+
+```{r}
+Table3%>%
+  select(Country, `Crime Index`, `Safety Index`)
+```
+
+
+
+
 
