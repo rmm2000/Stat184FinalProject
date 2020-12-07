@@ -1,0 +1,18 @@
+---
+title: "Final Project Presentation"
+date: 'December 9, 2020'
+name: "Riya Mishra"
+output: html_notebook
+---
+
+```{r}
+library(DataComputing)
+library(mosaic)
+library(readr)
+```
+
+###Guiding Question 
+
+In what ways can we improve the overall Happiness Score of a country? What are the top three predictors that determine the happiest country? Is there a particular region in the world that's happier than other regions? 
+
+
