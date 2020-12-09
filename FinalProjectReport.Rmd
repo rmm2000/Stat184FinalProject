@@ -1,0 +1,69 @@
+---
+title: "Final Project Report"
+date: 'December 13, 2020'
+name: "Riya Mishra"
+output: html_notebook
+---
+```{r}
+library(DataComputing)
+library(mosaic)
+library(readr)
+```
+
+###Guiding Question 
+
+In what ways can we improve the overall Happiness Score of a country? What are the top three predictors that determine the happiest country? Is there a particular region in the world that's happier than other regions? 
+
+
+###Data Access 
+
+##Uploading Process 
+To attach my first dataset, I converted my .csv file to a .txt file and uploaded it onto the Stat184FinalProject notebook. Then, I clicked on Import Dataset in Environment and renamed the dataset from "2015" to "WorldHappiness". To make sure that the dataset was uploaded and saved, I ran the code "View(WorldHappiness)" and I successfully was able to view the dataset table. Next, I tried to extract certain variables to ensure that I can access and manipulate the dataset. 
+```{r}
+View(WorldHappiness)
+WorldHappiness%>%
+  select(Country, Region, Happiness.Rank)
+```
+For my next dataset, I used the HTML tables format since the dataset was embedded onto the site. I was successfully able to create a table after loading the dataset using read_html().
+
+```{r}
+library(rvest)
+web_page <- "https://www.numbeo.com/crime/rankings_by_country.jsp?title=2015"
+SetOfTables <- web_page %>%
+  read_html() %>%
+  html_nodes(css = "table") %>%
+  html_table(fill = TRUE)
+length(SetOfTables)
+
+CrimeandSafety <- SetOfTables[[2]]
+CrimeandSafety
+```
+I tested to see if I can extract tables from the dataset. 
+```{r}
+CrimeandSafety%>%
+  select(Country, `Crime Index`, `Safety Index`)
+```
+## Insepcting the Data
+```{r} 
+head(CrimeandSafety)
+nrow(CrimeandSafety)
+nrow(WorldHappiness)
+names(WorldHappiness)
+names(CrimeandSafety)
+```
+
+### Data Wrangling 
+
+First, I'm going to merge the two datasets together so I can wrangle the data with both datasets as a whole. 
+```{r}
+MergedTable <-
+  CrimeandSafety%>%
+  left_join(WorldHappiness, by = c("Country"))
+MergedTable
+```
+Next, I'm curious to know the average happiness score within all regions. 
+```{r}
+
+```
+
+
