@@ -1,7 +1,7 @@
 ---
 title: "Final Project Report"
 date: 'December 13, 2020'
-name: "Riya Mishra"
+author: "Riya Mishra"
 output: html_notebook
 ---
 ```{r}
@@ -12,15 +12,18 @@ library(readr)
 
 ###Guiding Question 
 
-In what ways can we improve the overall Happiness Score of a country? What are the top three predictors that determine the happiest country? Is there a particular region in the world that's happier than other regions? 
+Is there a particular region in the world that's happier than other regions? 
 
+What lead me to this research question is how all the countries are dealing with covid. Some countries are doing great and currently have little to no cases. However, some countries are seeing a surge of new cases like never before. This got me thinking, is there a correlation between how happy a country is overall and how they are dealing with the pandemic? I initially wanted my second dataset to be a "covid cases by country" data set. However, there were no data sets I was able to find since they keep updating them every hour and wouldn't match my other data set. Also, given the time we had for the project, I wouldn't be able to wrangle all the data on time for the final report. Hence, I decided to check which countries were the happiest in general and maybe check if there was a correlation to the covid cases on my own.  
 
 ###Data Access 
 
-##Uploading Process 
+My primary data set is "The World Happiness" data set. The World Happiness is collected through a landmark survey from the Gallup World Poll. The report continues to gain global recognition as governments, organizations and civil society increasingly use happiness indicators to inform their policy-making decisions. The data started getting collected in 2012. The survey is collected by individuals who live in the country. They're asked to rate each question on a scale of 1 - 10. Once the data is collected, the Gallup World Poll creates an average value for each variable. It started to get collected as the United Nation started coming together and found that these surveys can help them laws and decision that will benefit their countries and to create awareness to authoritites about how their citizens feel. For this project, I will be using the 2015 data set. 
+
+My second data set is "The Crime/Safety Index by Country". It is collected and maintained by the company, Numbeo. The Crime/Safety Index by Country  first started getting collected in 2012 as well. The reason they started collecting this data is determine what countries are deemed more dangerous and which are deemed more safe and to find out what can be done to improve or maintain the scores. Since I wanted the data from this dataset to be compatible with the World Happiness, I used the 2015 Crime/Safety Index data.
+
 To attach my first dataset, I converted my .csv file to a .txt file and uploaded it onto the Stat184FinalProject notebook. Then, I clicked on Import Dataset in Environment and renamed the dataset from "2015" to "WorldHappiness". To make sure that the dataset was uploaded and saved, I ran the code "View(WorldHappiness)" and I successfully was able to view the dataset table. Next, I tried to extract certain variables to ensure that I can access and manipulate the dataset. 
 ```{r}
-View(WorldHappiness)
 WorldHappiness%>%
   select(Country, Region, Happiness.Rank)
 ```
@@ -43,13 +46,14 @@ I tested to see if I can extract tables from the dataset.
 CrimeandSafety%>%
   select(Country, `Crime Index`, `Safety Index`)
 ```
-## Insepcting the Data
+### Insepcting the Data
+Now, I am going to inspect my data sets using a few summary R functions. 
 ```{r} 
-head(CrimeandSafety)
-nrow(CrimeandSafety)
-nrow(WorldHappiness)
-names(WorldHappiness)
-names(CrimeandSafety)
+head(CrimeandSafety) # grabbing the first few rows of Crime/Safety Index
+nrow(CrimeandSafety) # counting the number of cases in the data frame 
+nrow(WorldHappiness) # counting the number of cases in the data frame for World Happiness 
+names(WorldHappiness) # checking the variable names in World Happiness data frame
+names(CrimeandSafety) # checking the variable names in Crime/Safety Index 
 ```
 
 ### Data Wrangling 
@@ -61,9 +65,54 @@ MergedTable <-
   left_join(WorldHappiness, by = c("Country"))
 MergedTable
 ```
-Next, I'm curious to know the average happiness score within all regions. 
+I'm not a big fan of the Column names for some of the variables. So, I will change them to my liking so it's easier to interpret and type as I'm working through the project. Also, I want to select certain tables for my reserach instead of the whole thing. So I will create a data frame with everything I want to use for my research. 
 ```{r}
+CleanedTable<- 
+  MergedTable%>%
+  rename(Safety = `Safety Index`, Crime = `Crime Index`, HappinessRank = Happiness.Rank, StandardError =
+           Standard.Error, HLE = Health..Life.Expectancy., HappinessScore = Happiness.Score, Corruption =
+           Trust..Government.Corruption., Dystopia = Dystopia.Residual)%>%
+  select(Country, Crime, Safety, Region, HappinessScore,HappinessRank, HLE, Freedom, Corruption, Generosity,Dystopia )
 
+CleanedTable
+```
+I recognized that a lot of countries around the same area have similar names. For example, countries in the Middle East usually end with a "tan"" in the end. Hence, I want to check if Countries with more than 3 constants have a lower or higher score and if the different conuntry names do relate to each other. This will help me understand the different areas of the World and if countries with similar names and around each other have a similar happiness score. 
+```{r}
+CleanedTable %>% 
+      filter(grepl("[^aeiou]{3,}", Country, ignore.case = TRUE)) %>%
+  arrange(desc(HappinessScore))
 ```
 
+Next, I'm curious to know the average happiness score within all regions. This will give me an idea of what region has the highest score. I will be able to determine why by focusing on the highest and lowest score. 
+```{r}
+HighestScore<-
+  CleanedTable %>%
+  group_by(Region)%>%
+  summarise(Average = mean(HappinessScore))%>%
+  arrange(desc(Average))
+HighestScore
+```
+Here, we can see that Australia and New Zealand Region has the highest average Happiness Score of 7.285. On the other hand, the region with the lowest average score is the Southern Asia region with a score of 4.469.
+
+I want to get the average score for each variable in each region. This will make analyzing the data per region a lot better since we're looking at regions as a whole rather than individual Countries. 
+
+```{r}
+AverageScores<-
+  CleanedTable %>%
+  group_by(Region)%>%
+  summarise(AvgHappScore = mean(HappinessScore) , CrimeAverage = mean(Crime),CorruptionAvg = mean(Corruption), AvgDystopia = mean(Dystopia))%>%
+  arrange(desc(AvgHappScore,CrimeAverage))
+AverageScores
+```
+###Data Visualization 
+Since we want to see which region is happiest, I decided to make a few graphs with the varaibles I thought were most important in interpreting happienss score.
+```{r}
+AverageScores%>% 
+  ggplot(aes(x = AvgDystopia, y =  AvgHappScore )) + geom_point( ) + aes(colour= Region)+ ggtitle("Score vs  Dystopia by Region in 2015")
+```
+For my first plot, I decided to use the Average Dystopia vs the Average Happiness Score. The Average Dystopia is the lowest scores observed for the 6 key variables. A higher the dystopia, the more unhappy people can be in a given Country. So, looking at this plot, I can see that Australia and New Zealand have the highest happiness score and an average dystopia score. North America has a high happiness score but a higher Dystopia score. Hence, I would say Australia and New Zealand region is happier than other regions. 
+```{r}
+AverageScores %>%
+   ggplot(aes(x = AvgHappScore, y =  AvgHappScore))
+```
 
