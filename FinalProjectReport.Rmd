@@ -8,6 +8,7 @@ output: html_notebook
 library(DataComputing)
 library(mosaic)
 library(readr)
+library(tidyr)
 ```
 
 ###Guiding Question 
@@ -70,28 +71,36 @@ I'm not a big fan of the Column names for some of the variables. So, I will chan
 CleanedTable<- 
   MergedTable%>%
   rename(Safety = `Safety Index`, Crime = `Crime Index`, HappinessRank = Happiness.Rank, StandardError =
-           Standard.Error, HLE = Health..Life.Expectancy., HappinessScore = Happiness.Score, Corruption =
+           Standard.Error, HLE = Health..Life.Expectancy., HappinessScore = Happiness.Score, GovTrust =
            Trust..Government.Corruption., Dystopia = Dystopia.Residual)%>%
-  select(Country, Crime, Safety, Region, HappinessScore,HappinessRank, HLE, Freedom, Corruption, Generosity,Dystopia )
+  select(Country, Crime, Safety, Region, HappinessScore,HappinessRank, HLE, Freedom, GovTrust, Generosity,Dystopia )
+
 
 CleanedTable
 ```
-I recognized that a lot of countries around the same area have similar names. For example, countries in the Middle East usually end with a "tan"" in the end. Hence, I want to check if Countries with more than 3 constants have a lower or higher score and if the different conuntry names do relate to each other. This will help me understand the different areas of the World and if countries with similar names and around each other have a similar happiness score. 
+
+I recognized that a lot of countries around the same area have similar names. For example, countries in the Middle East usually end with a "tan"" in the end. Hence, I want to check if Countries that ended in a similar way had a lower or higher score and if the different conuntry names do relate to each other. This will help me understand the different areas of the World and if countries with similar names and around each other have a similar happiness score. 
 ```{r}
-CleanedTable %>% 
-      filter(grepl("[^aeiou]{3,}", Country, ignore.case = TRUE)) %>%
+SpecificCountry <-
+  CleanedTable %>% 
+  filter(grepl("tan", Country, ignore.case = TRUE)) %>%
   arrange(desc(HappinessScore))
+SpecificCountry
+```
+Looking at this table, I don't really see a correlation with country name and similarities in variables. Hence, I can conclude that countries that have similar names do not have similar scores throughout all the variables. 
+
+Next, I'm curious to know the average happiness score within all regions. This will give me an idea of what region has the highest score. I will be able to determine why by focusing on the highest and lowest score.
+```{r}
+GatherTable <- 
+  CleanedTable %>%
+  filter(! is.na(Region))%>%
+  group_by(Region) %>%
+  summarise(avg = mean(HappinessScore)) %>%
+  gather(key = Region, value = avg)%>%
+  arrange(desc(avg))
+GatherTable
 ```
 
-Next, I'm curious to know the average happiness score within all regions. This will give me an idea of what region has the highest score. I will be able to determine why by focusing on the highest and lowest score. 
-```{r}
-HighestScore<-
-  CleanedTable %>%
-  group_by(Region)%>%
-  summarise(Average = mean(HappinessScore))%>%
-  arrange(desc(Average))
-HighestScore
-```
 Here, we can see that Australia and New Zealand Region has the highest average Happiness Score of 7.285. On the other hand, the region with the lowest average score is the Southern Asia region with a score of 4.469.
 
 I want to get the average score for each variable in each region. This will make analyzing the data per region a lot better since we're looking at regions as a whole rather than individual Countries. 
@@ -99,20 +108,39 @@ I want to get the average score for each variable in each region. This will make
 ```{r}
 AverageScores<-
   CleanedTable %>%
+  filter(! is.na(Region))%>%
   group_by(Region)%>%
-  summarise(AvgHappScore = mean(HappinessScore) , CrimeAverage = mean(Crime),CorruptionAvg = mean(Corruption), AvgDystopia = mean(Dystopia))%>%
-  arrange(desc(AvgHappScore,CrimeAverage))
+  summarise(AvgHappScore = mean(HappinessScore) , AvgCrime = mean(Crime),AvgGovTrust = mean(GovTrust), AvgDystopia = mean(Dystopia), AvgHLE = mean(HLE), AvgFreedom = mean(Freedom),  AvgSafety = mean(Safety), AvgGenerosity = mean(Generosity))%>%
+  arrange(desc(AvgHappScore))
 AverageScores
 ```
+Australia and New Zealand region have the highest average happiness score. Hence, I want to see if they have the best scores for every other variable. They have one of the lowest crime index, one of the highest safety index, highest government trust index, the highest generosity, highest health life expectancy (HLE), and the highest freedom index. I would say in general, the Australia and New Zealand have the best ratings compared to the other regions. 
+
 ###Data Visualization 
-Since we want to see which region is happiest, I decided to make a few graphs with the varaibles I thought were most important in interpreting happienss score.
+Since we want to see which region is happiest, I decided to make a few graphs for visualization. 
+
+```{r}
+AverageScores%>%
+  ggplot(aes(x= Region,y= AvgHappScore,fill= Region))+geom_bar(stat='identity', width=0.7) + scale_x_discrete(labels = abbreviate)
+```
+I wanted to make a general barplot that helps me depict the different regions and their average happiness scores. As mentioned before, Australia and New Zealand has the highest happiness score. North America comes to a close second. And according to this graph, Western Europe region would come at third place.
 ```{r}
 AverageScores%>% 
-  ggplot(aes(x = AvgDystopia, y =  AvgHappScore )) + geom_point( ) + aes(colour= Region)+ ggtitle("Score vs  Dystopia by Region in 2015")
+  ggplot(aes(x = AvgDystopia, y =  AvgHappScore )) + geom_point( ) + aes(colour= Region)+ ggtitle("Score vs  Dystopia by Region in 2015") + ylim(4, 8) + xlim(1,3)
 ```
-For my first plot, I decided to use the Average Dystopia vs the Average Happiness Score. The Average Dystopia is the lowest scores observed for the 6 key variables. A higher the dystopia, the more unhappy people can be in a given Country. So, looking at this plot, I can see that Australia and New Zealand have the highest happiness score and an average dystopia score. North America has a high happiness score but a higher Dystopia score. Hence, I would say Australia and New Zealand region is happier than other regions. 
+Next, I decided to use the Average Dystopia vs the Average Happiness Score. The Average Dystopia is the lowest scores observed for the 6 key variables. A higher the dystopia, the more unhappy people can be in a given Country. So, looking at this plot, I can see that Australia and New Zealand have the highest happiness score and an average dystopia score. North America has a high happiness score but a higher Dystopia score. So, this means that there are very unhappy people in North America and dystopia really hurts their average happiness socre. Western Europe, which is number three based off of average happiness score, has a lower dystopia score compared to the top two regions. This drasitcally helps the Western Europe region since there aren't too many unhappy people there. I would say Australia and New Zealand region is happier than other regions and Western Europe region would come second. 
 ```{r}
-AverageScores %>%
-   ggplot(aes(x = AvgHappScore, y =  AvgHappScore))
+CleanedTable %>%
+   ggplot(aes(x = Freedom, y =  HappinessScore)) + geom_point() + aes(colour= Region)
 ```
+I wanted to make a Freedom vs Happiness because many individuals value freedom and I think it plays a big part of happiness. Looking at this plot, it's evident that the Western Europe region and Australia and New Zealand region have the most freedom and the higher scores of happiness. 
+
+### Conclusion 
+
+Based off of my findings from this research, I will conclude that Australia and New Zealand region is, on average, the happiest region in the World. Australia and New Zealand region had the highest ratings for almost every variable and the plots make it evident that it is the happiest. This was very interesting to me because the top 5 happiest countries are actually located in Western Europe. Although, on average happiness, Western Europe ranked third, I would say that it comes right after Australia and New Zealand since they had very high scores in some of the variables. Also, on the freedom plot, it was evident that Western Europe had the most freedom. When I conducted a few more plots, Western Europe was always at the top. 
+
+Tying this back to how I originially came up with this research, I was curious to see if there was a correlation between the happiness score of countries and how well they were handling the pandemic. Australia, as of December 13, only has 6 new cases and 908 total deaths. I would say that Australia is dealing really well with the pandemic and there could be some correlation between how happy the people in the country are and how they control the pandemic. 
+
+
+
 
